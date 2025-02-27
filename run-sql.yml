@@ -1,0 +1,36 @@
+name: Run SQL Queries on RFAM Database
+
+on:
+  push:
+    paths:
+      - '**/*.sql'  # Запуск только при изменении файлов с расширением .sql
+
+jobs:
+  run-queries:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v3
+
+    - name: Install MySQL client
+      run: sudo apt-get update && sudo apt-get install -y mysql-client
+
+    - name: Run SQL queries
+      env:
+        DB_HOST: mysql-rfam-public.ebi.ac.uk
+        DB_USER: rfamro
+        DB_PORT: 4497
+        DB_NAME: Rfam
+      run: |
+        # Функция для выполнения SQL-запросов
+        run_query() {
+          local query_file=$1
+          echo "Executing query from $query_file..."
+          mysql --user="$DB_USER" --host="$DB_HOST" --port="$DB_PORT" --database="$DB_NAME" < "$query_file"
+        }
+
+        # Выполнение всех SQL-файлов в репозитории
+        for sql_file in $(find . -name "*.sql"); do
+          run_query "$sql_file"
+        done
